@@ -4,20 +4,35 @@ Battle-tested patterns for getting the most out of Claude Code CLI, learned from
 
 Framework-agnostic — works for any project where Claude Code is your development partner.
 
+## Installation
+
+Copy the guide files into your project. Recommended location: `docs/claude-setup/`
+
+```bash
+# Clone this repo (or download as ZIP)
+git clone https://github.com/YOUR_USER/claude-cli-setup-tips.git /tmp/claude-setup
+
+# Copy into your project
+cp -r /tmp/claude-setup/*.md your-project/docs/claude-setup/
+```
+
+Or just copy the files wherever makes sense for your project — the guides reference each other by filename (relative), so any single folder works.
+
 ## Quick Start
 
-Tell Claude Code:
+Once the files are in your project, open Claude Code in your project directory and say:
+
 ```
-Read doc/claude-code-project-setup/SETUP.md and set up this project
+Read docs/claude-setup/SETUP.md and set up this project
 ```
 
-Claude asks 3-4 essential questions, creates the core files, then shows you optional features you can enable anytime. Nothing is forced — you add features when you need them.
+Adjust the path to wherever you put the files. Claude asks 3-4 essential questions, creates the core files (CLAUDE.md, MEMORY.md, /resume skill, etc.), then shows optional features you can add anytime.
 
-**Re-runnable**: Come back anytime and say "set up work tracking" or "add notifications" — it detects what exists and only adds what's missing.
+**Re-runnable**: Come back weeks later and say "set up work tracking" or "add notifications" — Claude detects what exists and only adds what's missing.
 
 **Individual guides**: Each guide works standalone too:
 ```
-Read doc/claude-code-project-setup/session-continuity.md and set it up
+Read docs/claude-setup/notification-hooks.md and set it up for this project
 ```
 
 ## What's Inside
@@ -43,7 +58,7 @@ Read doc/claude-code-project-setup/session-continuity.md and set it up
 
 | File | What it is |
 |------|-----------|
-| **[project-setup-prompt-generic.md](project-setup-prompt-generic.md)** | Alternative to SETUP.md — a prompt to paste into a new session. More verbose, asks more upfront questions. |
+| **[project-setup-prompt-generic.md](project-setup-prompt-generic.md)** | Alternative to SETUP.md — a self-contained prompt to paste into a new Claude Code session. Doesn't require copying files into your project. |
 
 ## What These Patterns Solve
 
@@ -62,18 +77,26 @@ Read doc/claude-code-project-setup/session-continuity.md and set it up
 
 ```
 First run:
-  "Read SETUP.md and set up this project"
+  Copy files into your project (e.g., docs/claude-setup/)
+  "Read docs/claude-setup/SETUP.md and set up this project"
   → 3-4 questions → core files created → done in 2 minutes
 
 Later, when needed:
-  "Set up work tracking"     → reads work-tracking.md, merges into existing setup
-  "Set up notifications"     → reads notification-hooks.md, walks through Telegram setup
-  "Add multi-agent support"  → reads multi-agent-coordination.md, creates comms folder
-  "Set up hours tracking"    → reads hours-tracking.md, creates rules + directory
+  "Read docs/claude-setup/work-tracking.md and set it up"
+  → detects existing config → asks what's needed → merges in
+
+Or just ask naturally:
+  "Set up work tracking"        → Claude knows to read work-tracking.md
+  "Add notifications"           → reads notification-hooks.md
+  "Add multi-agent support"     → reads multi-agent-coordination.md
 
 Re-run anytime:
-  "Read SETUP.md again"      → detects everything, only adds what's missing
+  "Read SETUP.md again"         → detects everything, only adds what's missing
 ```
+
+## No-Copy Alternative
+
+Don't want to copy files into your project? Use the self-contained prompt in **[project-setup-prompt-generic.md](project-setup-prompt-generic.md)** — paste it directly into a Claude Code session. It includes everything inline, no external files needed. Less modular but zero setup.
 
 ## Origin
 
