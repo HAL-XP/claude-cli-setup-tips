@@ -1,10 +1,10 @@
-# Work Tracking
+# Research Tracking
 
 Patterns for tracking what you've tried, what worked, what didn't, and what you learned — across sessions and across weeks. Applicable to any iterative project: ML experiments, feature development, debugging campaigns, performance tuning, or research.
 
 ## Auto-Setup
 
-**For Claude**: If the user asked you to set up work tracking, follow these steps:
+**For Claude**: If the user asked you to set up research tracking, follow these steps:
 
 1. **Check what exists**:
    - `.claude/rules/banned-techniques.md` or similar "don't do this" file
@@ -21,7 +21,7 @@ Patterns for tracking what you've tried, what worked, what didn't, and what you 
 3. **Create missing files**:
    - `.claude/rules/banned-techniques.md` with project-specific categories
    - `output/LEARNINGS.json` (empty template)
-   - Add work tracking section to CLAUDE.md
+   - Add research tracking section to CLAUDE.md
 4. **Explain the workflow** — tell the user how the pieces fit together
 
 ---
@@ -61,7 +61,7 @@ The single most time-saving pattern for any iterative project. Without it, you (
 - Group by category for readability.
 - Differentiate "harmful" (makes things worse) from "dead" (doesn't help) from "abandoned" (might work but not worth pursuing).
 
-## Pattern 2: Work Registry
+## Pattern 2: Research Registry
 
 For projects with many iterations, maintain a structured log of what was tried.
 
@@ -172,7 +172,7 @@ project/
   .claude/rules/
     banned-techniques.md      # Auto-loaded, prevents retrying dead ends
   output/
-    work_registry.jsonl       # Every significant attempt recorded
+    research_registry.jsonl    # Every significant attempt recorded
     LEARNINGS.json            # Confirmed findings
     PROGRESS_TREE.md          # Visual work/experiment tree
     decisions/                # Decision documents with reasoning
@@ -180,9 +180,9 @@ project/
 
 CLAUDE.md ties it together:
 ```markdown
-## Work Tracking
+## Research Tracking
 - **Before trying an approach**: Check `banned-techniques.md` and `LEARNINGS.json`
-- **After significant work**: Add to `work_registry.jsonl`, update `PROGRESS_TREE.md`
+- **After significant work**: Add to `research_registry.jsonl`, update `PROGRESS_TREE.md`
 - **After confirming a finding**: Add to `LEARNINGS.json`
 - **If approach is dead**: Add to `.claude/rules/banned-techniques.md`
 - **Decisions/analysis**: Save to `output/decisions/` with date-stamped filenames

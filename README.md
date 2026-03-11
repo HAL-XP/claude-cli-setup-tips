@@ -28,7 +28,7 @@ Read docs/claude-setup/SETUP.md and set up this project
 
 Adjust the path to wherever you put the files. Claude asks 3-4 essential questions, creates the core files (CLAUDE.md, MEMORY.md, /resume skill, etc.), then shows optional features you can add anytime.
 
-**Re-runnable**: Come back weeks later and say "set up work tracking" or "add notifications" — Claude detects what exists and only adds what's missing.
+**Re-runnable**: Come back weeks later and say "set up research tracking" or "add notifications" — Claude detects what exists and only adds what's missing.
 
 **Individual guides**: Each guide works standalone too:
 ```
@@ -50,7 +50,7 @@ Read docs/claude-setup/notification-hooks.md and set it up for this project
 |------|---------------|----------|
 | **[notification-hooks.md](notification-hooks.md)** | Telegram/SMS/desktop notifications, smart relay (no spam), permission forwarding, pre-compact alerts. Full `settings.json` examples. | Remote work, AFK monitoring |
 | **[multi-agent-coordination.md](multi-agent-coordination.md)** | Filesystem message board, watcher script with notifications, scope separation, `[AgentName]` prefix convention. | 2+ Claude sessions on same project |
-| **[work-tracking.md](work-tracking.md)** | Banned techniques (auto-loaded dead ends), LEARNINGS.json, decision docs, progress trees, work registries. | Any iterative project — dev, ML, research |
+| **[research-tracking.md](research-tracking.md)** | Banned techniques (auto-loaded dead ends), LEARNINGS.json, decision docs, progress trees, research registries. | Any iterative project — dev, ML, research |
 | **[hours-tracking.md](hours-tracking.md)** | End-of-session time tracking — maps tasks to human-equivalent hours with multiplier. | ROI analysis, project planning |
 | **[tips-and-patterns.md](tips-and-patterns.md)** | Long-running processes, background agents, credentials, Windows Unicode fixes, git workflow, custom skills, CLAUDE.md management. | Everyone — grab bag of essentials |
 
@@ -66,7 +66,7 @@ Read docs/claude-setup/notification-hooks.md and set it up for this project
 |---------|---------|-------|
 | "Where was I?" after restarting | MEMORY.md + /resume skill | session-continuity |
 | Context compaction destroys work | Pre-compact hook saves state | session-continuity |
-| Retrying approaches that already failed | Banned techniques file (auto-loaded) | work-tracking |
+| Retrying approaches that already failed | Banned techniques file (auto-loaded) | research-tracking |
 | Copy-pasting between two Claude terminals | Filesystem message board | multi-agent-coordination |
 | Claude blocked on permission, user is AFK | Permission prompt notification | notification-hooks |
 | Important analysis lost after compaction | File-first output rule | session-continuity |
@@ -82,11 +82,11 @@ First run:
   → 3-4 questions → core files created → done in 2 minutes
 
 Later, when needed:
-  "Read docs/claude-setup/work-tracking.md and set it up"
+  "Read docs/claude-setup/research-tracking.md and set it up"
   → detects existing config → asks what's needed → merges in
 
 Or just ask naturally:
-  "Set up work tracking"        → Claude knows to read work-tracking.md
+  "Set up research tracking"    → Claude knows to read research-tracking.md
   "Add notifications"           → reads notification-hooks.md
   "Add multi-agent support"     → reads multi-agent-coordination.md
 

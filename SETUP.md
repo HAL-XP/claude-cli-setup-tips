@@ -140,7 +140,7 @@ Core setup is done! Here's what's running:
 
 | Feature | Command | Best for |
 |---------|---------|----------|
-| **Work tracking** | "Set up work tracking" | Projects with iteration — dead ends, learnings, decisions |
+| **Research tracking** | "Set up research tracking" | Projects with iteration — dead ends, learnings, decisions |
 | **Hours tracking** | "Set up hours tracking" | Track equivalent human work hours per session |
 | **Multi-agent coordination** | "Set up multi-agent" | When 2+ Claude sessions work on the same project |
 | **Cloud GPU support** | "Set up cloud GPU" | ML training on Vast.ai, RunPod, etc. |
@@ -158,7 +158,7 @@ When the user asks for a feature later (or right now), read the corresponding gu
 
 | User says | Read this guide |
 |-----------|----------------|
-| "Set up work tracking" / "track experiments" / "banned techniques" | `work-tracking.md` |
+| "Set up research tracking" / "track experiments" / "banned techniques" | `research-tracking.md` |
 | "Set up hours tracking" / "track time" | `hours-tracking.md` |
 | "Set up multi-agent" / "two agents" / "agent coordination" | `multi-agent-coordination.md` |
 | "Set up notifications" / "Telegram" / "notify me" | `notification-hooks.md` |
