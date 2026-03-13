@@ -31,23 +31,49 @@ Track the equivalent human work hours that Claude completes each session. Useful
 **File: `.claude/rules/hours-tracking.md`**
 
 ```markdown
-# Hours Tracking Format
+# Human Work Hours Tracking
 
-At the end of each session, before finishing, create/update `hours/hours-YYYYMMDD.md`.
+## Rule: Log equivalent human hours at end of each session
 
-## File format
+After completing work, before the session ends, create or update a daily hours log file at `hours/hours-YYYYMMDD.md` (same date convention as `summary/`).
+
+## File Format
 
 | Task | Commits | Human Hours | Notes |
 |---|---|---|---|
-| Task description | `abc1234` | 4-6h | Brief context |
+| Short task description | `abc1234` | 4-6h | Brief context |
+| Another task | `def5678`, `ghi9012` | 8-12h | Brief context |
 
-### Totals
-- **Estimated human hours**: X-Y (midpoint: Z)
-- **Claude active time**: ~Xh
-- **Multiplier**: ~Nx
+**Total**: ~XXh (midpoint of ranges)
+**Claude time**: ~Xh (actual wall clock)
+**Multiplier**: ~XXx
+
+## Estimation Guidelines
+
+- Estimate how long a **senior full-stack developer** would take to do the same work
+- Include: research, planning, coding, testing, debugging, code review
+- Use ranges (e.g., "4-6h") to acknowledge uncertainty
+- Group related commits into logical tasks
+- Don't inflate — be honest and conservative
+- The multiplier = total human hours / Claude wall clock time
+
+## What Counts
+
+- Feature implementation (backend + frontend)
+- Bug fixes (include debugging time a human would spend)
+- Refactoring / code reorganization
+- Architecture plans and design docs
+- UX audits and systematic improvements
+- Pipeline/infrastructure work
+
+## What Doesn't Count
+
+- Trivial commits (typo fixes, comment changes)
+- Git operations themselves
+- Waiting for builds/deploys
 ```
 
-This file is auto-loaded for the project, so Claude will see it every session.
+This file is auto-loaded for the project (it's in `.claude/rules/`), so Claude will see it every session.
 
 ### 2. Add to CLAUDE.md
 
@@ -108,8 +134,6 @@ Pick the role that matches your project:
 ```markdown
 # Hours Log — 2026-03-10
 
-## Session: Pipeline Agent (10:00 - 18:00 CET)
-
 | Task | Commits | Human Hours | Notes |
 |---|---|---|---|
 | Debug model loading (4 bugs found) | `abc1234` | 6-8h | Wrong model file, missing embeddings, disconnected conditioning, Unicode crash |
@@ -117,29 +141,9 @@ Pick the role that matches your project:
 | Set up inter-agent comms | `ghi9012` | 2-3h | Filesystem protocol, watcher script, Telegram notifications |
 | Run and review 6 experiments | `jkl3456` | 2-3h | Render + review + score + compare for each |
 
-### Totals
-- **Estimated human hours**: 13-18 (midpoint: 15.5)
-- **Claude active time**: ~8h (with render waits)
-- **Multiplier**: ~1.9x
-
-## Session: Trainer Agent (01:00 - 23:40 CET)
-
-| Task | Commits | Human Hours | Notes |
-|---|---|---|---|
-| Gradient bug diagnosis | `mno7890` | 4-6h | Weight comparison, backward pass tracing, LoRA internals |
-| Training launch + monitoring | — | 3-5h | Script creation, 20+ SSH checks across 22 hours |
-
-### Totals
-- **Estimated human hours**: 7-11 (midpoint: 9)
-- **Claude active time**: ~4h (intermittent)
-- **Multiplier**: ~2.3x
-
----
-
-## Daily Grand Total
-- **Estimated human hours**: 20-29 (midpoint: 24.5)
-- **Claude active time**: ~12h
-- **Combined multiplier**: ~2.0x
+**Total**: ~15.5h (midpoint of ranges)
+**Claude time**: ~8h (with render waits)
+**Multiplier**: ~1.9x
 ```
 
 ## Multiple Sessions Per Day

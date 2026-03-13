@@ -14,11 +14,12 @@ Before asking ANY questions, silently scan for existing configuration:
 Files to check:
 - CLAUDE.md (project root) — existing project instructions?
 - .claude/rules/*.md — existing rule files?
+- .claude/settings.json — project-level hooks?
 - .claude/skills/*/SKILL.md — existing skills?
 - ~/.claude/CLAUDE.md — global user instructions?
-- ~/.claude/settings.json — existing hooks? Which types?
+- ~/.claude/settings.json — user-level hooks? Which types?
+- ~/.claude/projects/*/memory/ — existing auto-memory files?
 - ~/.claude_credentials or .env — existing credentials file?
-- */MEMORY.md in auto-memory directory — existing memory?
 - .gitignore — what's already ignored?
 - agent_comms/ or similar — existing inter-agent setup?
 - hours/ — existing hours tracking?
@@ -32,12 +33,13 @@ I scanned your project for existing Claude Code setup:
 
 **Already configured:**
 - [x] CLAUDE.md (N lines) — sections: [list headers]
+- [x] .claude/rules/ — files: frontend.md, pipeline.md
 - [x] ~/.claude/settings.json — hooks: PreCompact, Notification
 - [x] etc.
 
 **Not yet set up:**
-- [ ] No MEMORY.md (session continuity)
-- [ ] No /resume skill
+- [ ] No .claude/settings.json (project-level hooks)
+- [ ] No SessionStart hook
 - [ ] No banned-techniques file
 - [ ] etc.
 
@@ -85,18 +87,100 @@ Sections to include:
 - **Key Files**: table — populate as you create files
 - **Git Workflow**: commit format with Co-Authored-By, push after milestones
 
-### B. MEMORY.md (auto-memory directory)
-Create initial file per `session-continuity.md` Pattern 1.
+**Keep CLAUDE.md lean** — under 150 lines. Detailed rules go in `.claude/rules/` files.
 
-### C. `.claude/skills/resume/SKILL.md`
-Create per `session-continuity.md` Pattern 2. Start simple — can be extended later.
+### B. `.claude/rules/` directory
 
-### D. `.claude/rules/banned-techniques.md`
-Create empty template. The user will populate it as dead ends are discovered.
+Split rules into domain-specific files instead of putting everything in CLAUDE.md. Files in `.claude/rules/` are auto-loaded into every conversation for this project.
+
+Recommended structure:
+```
+.claude/rules/
+  banned-techniques.md   # Dead ends — never retry these
+  <domain>.md            # One file per domain (e.g., frontend.md, api.md, pipeline.md)
+```
+
+Create `banned-techniques.md` with empty template:
 ```markdown
 # Banned Techniques (proven harmful or dead — do NOT retry)
 ## [Add categories as you discover dead ends]
 (none yet)
+```
+
+For projects with multiple domains (frontend + backend, pipeline + API, etc.), suggest creating domain-specific rule files. Example from a real project:
+```
+.claude/rules/
+  frontend.md          # React/Tailwind/shadcn patterns, component conventions
+  python-api.md        # FastAPI routes, job system, restart protocol
+  pipeline.md          # Stage order, naming conventions, module ownership
+  ux.md                # UX principles, state-driven UI, accessibility
+  hours-tracking.md    # Hours log format and estimation guidelines
+  banned-techniques.md # Dead ends
+```
+
+Each file stays focused. Claude loads all of them automatically — no need to reference them in CLAUDE.md.
+
+### C. `.claude/settings.json` (project-level hooks)
+
+Create a project-level settings file with a `SessionStart` hook that checks project health on every conversation start:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"=== SESSION INIT ===\"; echo \"Project: <project-name>\"; echo \"---\"; echo \"Git status:\"; git status --short 2>/dev/null | head -15; echo \"---\"; echo \"ACTION: Read MEMORY.md for current state. Commit any uncommitted work first.\"'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+For projects with a backend server, add health checks:
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"=== SESSION INIT ===\"; echo \"Git status:\"; git status --short 2>/dev/null | head -15; echo \"---\"; echo \"API:\"; curl -sf http://localhost:8000/health 2>/dev/null && echo \" running\" || echo \" NOT running\"; echo \"---\"; echo \"ACTION: Read MEMORY.md for current state. Commit any uncommitted work. Restart API if not running.\"'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The `ACTION:` line at the end is key — it tells Claude what to do with the information. See `session-continuity.md` for the CLAUDE.md instruction that pairs with this.
+
+### D. Auto-memory MEMORY.md
+
+Claude Code's auto-memory lives at `~/.claude/projects/<project-hash>/memory/`. Claude creates and manages this automatically. You can seed it with an initial MEMORY.md:
+
+```markdown
+# Project Memory
+
+## Current State
+- (nothing yet — update this every session end)
+
+## Key Technical Findings
+- (populated as we discover things)
+
+## Architecture Decisions
+- (record important choices and WHY)
+
+## User Preferences
+- (workflow preferences, tool choices, communication style)
 ```
 
 ### E. `.gitignore` additions
@@ -116,8 +200,13 @@ Even without notifications, add the echo-only version to `~/.claude/settings.jso
   "hooks": {
     "PreCompact": [
       {
-        "type": "command",
-        "command": "echo 'COMPACTION IMMINENT. You MUST immediately: 1) Update MEMORY.md ACTIVE WORK. 2) Commit unsaved work. Do these NOW before context is lost.'"
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'COMPACTION IMMINENT. You MUST immediately: 1) Update MEMORY.md ACTIVE WORK. 2) Commit unsaved work. Do these NOW before context is lost.'"
+          }
+        ]
       }
     ]
   }
@@ -134,7 +223,9 @@ After core setup is done, show the user what else is available:
 ```
 Core setup is done! Here's what's running:
 - [list of files created]
-- Start every session with `/resume`, end by telling me to save state
+- SessionStart hook checks project health every conversation
+- PreCompact hook protects against context loss
+- Auto-memory persists knowledge across sessions
 
 **Optional features** — enable any of these anytime by asking me:
 
@@ -143,8 +234,8 @@ Core setup is done! Here's what's running:
 | **Research tracking** | "Set up research tracking" | Projects with iteration — dead ends, learnings, decisions |
 | **Hours tracking** | "Set up hours tracking" | Track equivalent human work hours per session |
 | **Multi-agent coordination** | "Set up multi-agent" | When 2+ Claude sessions work on the same project |
-| **Cloud GPU support** | "Set up cloud GPU" | ML training on Vast.ai, RunPod, etc. |
 | **Notification hooks** | "Set up notifications" | Telegram/SMS alerts (if not done already) |
+| **PostToolUse hooks** | "Set up post-edit hooks" | Auto type-check after .tsx edits, auto pycache clear, etc. |
 
 Each feature detects your existing setup and merges in — nothing gets overwritten.
 Just ask when you need one, even weeks from now.
@@ -162,9 +253,9 @@ When the user asks for a feature later (or right now), read the corresponding gu
 | "Set up hours tracking" / "track time" | `hours-tracking.md` |
 | "Set up multi-agent" / "two agents" / "agent coordination" | `multi-agent-coordination.md` |
 | "Set up notifications" / "Telegram" / "notify me" | `notification-hooks.md` |
-| "Set up cloud GPU" / "Vast.ai" / "RunPod" | Ask: which provider, API keys, GPU types. Add section to CLAUDE.md. |
+| "Set up post-edit hooks" / "auto type check" | `notification-hooks.md` (PostToolUse section) |
 
-Each guide's Auto-Setup section handles: detect existing → ask what's needed → create files → verify.
+Each guide's Auto-Setup section handles: detect existing -> ask what's needed -> create files -> verify.
 
 ---
 
@@ -172,7 +263,7 @@ Each guide's Auto-Setup section handles: detect existing → ask what's needed �
 
 After any setup (core or add-on):
 
-1. **Verify**: Run `/resume` to confirm it reads MEMORY.md correctly
+1. **Verify**: Check that hooks fire correctly, rules are loaded, settings.json is valid JSON
 2. **Commit**: Stage and commit all new files with message `docs: Set up Claude Code project infrastructure`
 3. **Summarize**: List every file created/modified and any manual steps remaining (e.g., "Create a Telegram bot via @BotFather")
 
@@ -187,3 +278,4 @@ After any setup (core or add-on):
 - **Do make it re-runnable**: Step 0 detection means this works on first run AND on subsequent "add feature X" runs.
 - **Platform matters**: Windows needs `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` in every Python script.
 - **Keep CLAUDE.md lean**: Use `.claude/rules/` for detailed rules, CLAUDE.md for the index. Under 150 lines if possible.
+- **Two levels of hooks**: User-level (`~/.claude/settings.json`) for global behavior. Project-level (`.claude/settings.json`) for project-specific automation.

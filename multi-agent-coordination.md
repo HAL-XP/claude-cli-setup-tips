@@ -1,6 +1,8 @@
 # Multi-Agent Coordination
 
-When two or more Claude Code sessions work on the same project (e.g., one training models, another evaluating outputs), they need a way to communicate without the user copy-pasting between terminals.
+When two or more **separate Claude Code CLI sessions** work on the same project (e.g., one building the backend, another building the frontend), they need a way to communicate without the user copy-pasting between terminals.
+
+This guide is about **independent CLI agent instances** — separate terminal windows, each with their own conversation. Not about the built-in Agent tool subagents within a single conversation.
 
 ## Auto-Setup
 
@@ -9,28 +11,27 @@ When two or more Claude Code sessions work on the same project (e.g., one traini
 1. **Check what exists**:
    - Look for `agent_comms/`, `comms/`, or similar directories in the project
    - Check CLAUDE.md for existing inter-agent sections
-   - Check if a watcher script already exists
-   - Check if `/resume` skill already has a comms check step
+   - Check `.claude/rules/` for agent scope definitions
+   - Check if SessionStart hooks already exist
    - Report findings
 2. **Ask the user**:
-   - "What are your agent names and roles?" (e.g., "Trainer — handles cloud GPU training" and "Pipeline — handles evaluation and scoring")
+   - "What are your agent names and roles?" (e.g., "Pipeline — handles backend + data pipeline" and "Frontend — handles React UI + API routes")
    - "Where should the shared message folder be?" (default: `agent_comms/` in project root)
    - "Do you want Telegram/notification alerts when a new message arrives?" (requires notification hooks)
    - For existing setup: "Keep current setup / Merge / Replace?"
 3. **Create missing files**:
    - Comms directory with README.md (protocol docs)
-   - Watcher script if notifications are wanted
    - Add inter-agent section to CLAUDE.md (for EACH agent — each needs to know about the others)
-   - Add comms check step to `/resume` skill
-   - Add scope separation section to CLAUDE.md
-4. **Verify** — write a test message and confirm the watcher picks it up (if enabled)
+   - Add scope separation rules to `.claude/rules/`
+   - Add comms check to SessionStart hook
+4. **Verify** — write a test message and confirm the other agent can read it
 
 ---
 
 ## The Problem
 
-- Agent A finishes training and wants to tell Agent B the checkpoint is ready
-- Agent B finds a bug that affects Agent A's work
+- Agent A finishes a backend change and wants to tell Agent B the API contract changed
+- Agent B finds a bug that affects Agent A's data model
 - The user is tired of being a human message bus between two CLI windows
 
 ## Pattern 1: Filesystem Message Board
@@ -41,10 +42,10 @@ Simple, no infrastructure needed. Both agents read/write files in a shared direc
 
 ```
 project_root/agent_comms/
-  README.md           # Protocol docs
-  FROM_trainer_20260310_2300.md
-  FROM_pipeline_20260310_2315.md
-  .seen_messages      # Tracks which messages the watcher has processed
+  README.md           # Protocol docs (so each agent knows the rules)
+  FROM_pipeline_20260310_2300.md
+  FROM_frontend_20260310_2315.md
+  FROM_ue5_20260311_0900.md
 ```
 
 ### Naming convention
@@ -52,11 +53,6 @@ project_root/agent_comms/
 ```
 FROM_<agent-name>_<YYYYMMDD>_<HHMM>.md
 ```
-
-Examples:
-- `FROM_trainer_20260310_2300.md`
-- `FROM_pipeline_20260310_2315.md`
-- `FROM_frontend_20260311_0900.md`
 
 ### Message format
 
@@ -68,132 +64,118 @@ Examples:
 [Content — status updates, questions, results, requests]
 ```
 
-### CLAUDE.md instruction (add to both agents)
+### CLAUDE.md instruction (add to each agent's scope)
 
 ```markdown
 ## Inter-Agent Communication
 - **Shared message board**: `agent_comms/`
 - Write messages as `FROM_<your-agent-name>_<YYYYMMDD_HHMM>.md`
-- **On session start**: Check this folder for unread messages
-- Agents: [Agent A] (purpose), [Agent B] (purpose)
+- **On session start**: Check this folder for unread messages from other agents
+- Agents: [Pipeline] (backend, data), [Frontend] (React UI, API routes), [UE5] (Unreal Engine)
 ```
 
-## Pattern 2: Watcher Script with Notifications
+### Check messages on SessionStart
 
-A background script that polls the comms folder and sends notifications (Telegram, email, desktop) when new messages appear.
+Add a comms check to the project-level SessionStart hook:
 
-```python
-"""Watch agent_comms/ folder and send notifications on new messages."""
-import sys, os, time, urllib.request, urllib.parse
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-# Line-buffered output for nohup
-sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf-8',
-                  errors='replace', buffering=1)
-
-COMMS_DIR = "path/to/agent_comms"
-SEEN_FILE = os.path.join(COMMS_DIR, ".seen_messages")
-POLL_INTERVAL = 30  # seconds
-
-# Load your notification credentials
-# source ~/.claude_credentials or hardcode for standalone use
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
-
-
-def get_seen():
-    if not os.path.exists(SEEN_FILE):
-        return set()
-    with open(SEEN_FILE) as f:
-        return set(line.strip() for line in f if line.strip())
-
-
-def mark_seen(filename):
-    with open(SEEN_FILE, "a") as f:
-        f.write(filename + "\n")
-
-
-def send_telegram(text):
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        return
-    try:
-        data = urllib.parse.urlencode({
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": text[:4000]
-        }).encode()
-        req = urllib.request.Request(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            data=data
-        )
-        urllib.request.urlopen(req, timeout=10)
-    except Exception as e:
-        print(f"Telegram failed: {e}")
-
-
-def main():
-    print(f"Watching: {os.path.abspath(COMMS_DIR)}")
-    print(f"Interval: {POLL_INTERVAL}s")
-
-    while True:
-        seen = get_seen()
-        try:
-            for f in sorted(os.listdir(COMMS_DIR)):
-                if not f.startswith("FROM_") or not f.endswith(".md"):
-                    continue
-                if f in seen:
-                    continue
-                # New message
-                ts = time.strftime("%H:%M:%S")
-                print(f"\n  NEW MESSAGE: {f} ({ts})")
-                filepath = os.path.join(COMMS_DIR, f)
-                with open(filepath, encoding="utf-8") as fh:
-                    content = fh.read()
-                # First 3 lines as preview
-                preview = "\n".join(content.strip().split("\n")[:3])
-                send_telegram(f"[AgentComms] New message: {f}\n\n{preview}")
-                mark_seen(f)
-        except Exception as e:
-            print(f"Error: {e}")
-        time.sleep(POLL_INTERVAL)
-
-
-if __name__ == "__main__":
-    main()
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"=== SESSION INIT ===\"; echo \"Git status:\"; git status --short 2>/dev/null | head -15; echo \"---\"; MSGS=$(ls -1 agent_comms/FROM_*.md 2>/dev/null | wc -l | tr -d \" \"); echo \"Agent messages: $MSGS files\"; if [ \"$MSGS\" -gt 0 ]; then echo \"Latest:\"; ls -1t agent_comms/FROM_*.md 2>/dev/null | head -3; fi; echo \"---\"; echo \"ACTION: Read MEMORY.md. Check agent_comms/ for unread messages. Commit uncommitted work.\"'"
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
-Launch with:
-```bash
-nohup python agent_comms_watcher.py > /tmp/comms_watcher.log 2>&1 &
-echo "Watcher PID: $!"
+## Pattern 2: Shared Context Directory
+
+Beyond the message board, agents need a way to share structured knowledge — not just one-off messages, but ongoing state.
+
+### Setup
+
+Create a shared context directory that all agents read:
+
 ```
+project_root/
+  docs/
+    AGENT_PIPELINE.md    # Pipeline agent's full context
+    AGENT_FRONTEND.md    # Frontend agent's full context
+    AGENT_UE5.md         # UE5 agent's full context
+    SCENE_GRAPH_SCHEMA.md  # Shared contract (JSON schema, API types, etc.)
+```
+
+### How it works
+
+Each agent's context file contains:
+- What this agent owns (files, directories, responsibilities)
+- Current status and recent changes
+- Contracts with other agents (API shapes, file formats, shared schemas)
+- Known issues that affect other agents
+
+The main `CLAUDE.md` tells each agent which context file to load:
+
+```markdown
+## Agent Contexts
+
+| Agent | Context File | Scope |
+|---|---|---|
+| **Pipeline** | `@docs/AGENT_PIPELINE.md` | Script parsing, LLM extraction, blocking, motion, camera |
+| **Frontend** | `@docs/AGENT_FRONTEND.md` | FastAPI backend, React UI, job system, UX design |
+| **UE5** | `@docs/AGENT_UE5.md` | Remote execution, scene building, MetaHuman, Sequencer |
+
+The shared contract between all agents is JSON: `docs/SCENE_GRAPH_SCHEMA.md`
+```
+
+When starting a session for a specific agent, tell Claude: "You are the Frontend agent. Read `docs/AGENT_FRONTEND.md` for your context."
+
+### Shared contract files
+
+Define the boundary between agents explicitly:
+- API response shapes (TypeScript interfaces or JSON schema)
+- File formats (what each stage produces, what the next stage expects)
+- Database schema (which agent owns which tables)
+- Environment assumptions (ports, paths, required services)
+
+When one agent changes the contract, they write to `agent_comms/` notifying the others.
 
 ## Pattern 3: Scope Separation
 
 When two agents touch the same codebase, clearly define ownership to prevent conflicts.
 
-### Example scope doc (in each agent's CLAUDE.md)
+### Example scope definition (in `.claude/rules/` or CLAUDE.md)
 
 ```markdown
 ## Scope Separation
-- **Agent A scope**: Cloud provisioning, training execution, checkpoint management
-- **Agent B scope**: Evaluation, scoring, ComfyUI integration, strategy decisions
-- **Shared**: agent_comms/ folder, output models directory
-- **Don't duplicate**: Agent A's training details in Agent B's docs (point to theirs)
+- **Pipeline agent**: `pipeline/`, `scripts/`, `output/`, `docs/AGENT_PIPELINE.md`
+- **Frontend agent**: `frontend/`, `api/`, `docs/AGENT_FRONTEND.md`
+- **UE5 agent**: `pipeline/ue5_bridge/`, `docs/AGENT_UE5.md`
+- **Shared (read-only for all)**: `docs/SCENE_GRAPH_SCHEMA.md`, `CLAUDE.md`
+- **Shared (write by any)**: `agent_comms/`, `MEMORY.md`
 ```
 
 ### Rules
-- Each agent has its own CLAUDE.md section or separate instruction file
-- Shared resources (models, datasets) have clear ownership for writes
-- One agent doesn't modify the other's configs without communicating first
-- Decisions that affect both agents go through the comms folder
+- Each agent has its own scope — don't modify files outside your scope without communicating first
+- Shared resources have clear ownership for writes
+- Decisions that affect multiple agents go through the comms folder
+- If you need a change in another agent's scope, write a message requesting it
 
 ## Pattern 4: Agent Name Prefix
 
 When multiple agents send notifications, prefix every message with the agent name:
 
 ```
-[Trainer] Step 8000 complete, checkpoint downloaded
-[Pipeline] Eval results: struct 6.9, photo 8.0
-[Research] Found new paper on conditioning architectures
+[Pipeline] Stage complete: room_shell generated for 3 locations
+[Frontend] Fix: category picker modal z-index issue
+[UE5] Build complete: int_wooden_cabin_night loaded in editor
 ```
 
 This lets the user instantly identify which agent is talking. Set the name once at session start based on the task context.
@@ -203,3 +185,34 @@ Add to CLAUDE.md:
 Every notification MUST start with `[AgentName]` where AgentName describes this session's role.
 Pick the name once at session start. Keep it consistent.
 ```
+
+## Practical Example: Three-Agent Project
+
+A script-to-previz system with Pipeline, Frontend, and UE5 agents:
+
+```
+ScriptToUnreal/
+  CLAUDE.md                      # Overview + agent table
+  docs/
+    AGENT_PIPELINE.md            # Pipeline scope, stage details
+    AGENT_FRONTEND.md            # Frontend scope, API routes
+    AGENT_UE5.md                 # UE5 scope, remote execution
+    SCENE_GRAPH_SCHEMA.md        # Shared JSON contract
+  .claude/rules/
+    pipeline.md                  # Pipeline-specific rules
+    frontend.md                  # Frontend-specific rules
+    python-api.md                # API conventions
+    ux.md                        # UX principles
+  agent_comms/
+    FROM_pipeline_20260313_1400.md   # "Scene graph schema updated, new field: front_yaw_offset"
+    FROM_frontend_20260313_1500.md   # "Viewer now supports offset preview, ready for testing"
+```
+
+Each agent starts their session, the SessionStart hook fires, they check `agent_comms/` for new messages, read their context file, and proceed with their scoped work.
+
+The user opens three terminal windows, starts Claude Code in each, and says:
+- Terminal 1: "You are the Pipeline agent. Read docs/AGENT_PIPELINE.md."
+- Terminal 2: "You are the Frontend agent. Read docs/AGENT_FRONTEND.md."
+- Terminal 3: "You are the UE5 agent. Read docs/AGENT_UE5.md."
+
+Each agent works independently within their scope, communicating through the filesystem.

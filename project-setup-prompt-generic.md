@@ -24,9 +24,9 @@ First, ask me these setup questions:
 9. Am I on Windows, Mac, or Linux?
 
 ### Optional features
-10. Do I need a scoring/review system for outputs?
-11. Do I need cloud GPU support? (Vast.ai, RunPod, Lambda, etc.)
-12. Will external collaborators or agents need access to project context?
+10. Do I want automatic health checks on session start? (SessionStart hooks)
+11. Do I want automatic type-checking/linting after edits? (PostToolUse hooks)
+12. Do I need cloud GPU support? (Vast.ai, RunPod, Lambda, etc.)
 
 ---
 
@@ -34,26 +34,29 @@ Based on my answers, create ALL of the following:
 
 ## 1. CLAUDE.md (project root)
 
-The main instruction file Claude reads every session. Include:
+The main instruction file Claude reads every session. Keep it under 150 lines. Include:
 
 **Project Goal section:**
 - Project name, goal, active workstreams
 - Current status and key metrics
 
 **Session Continuity section (CRITICAL):**
-- On session start: check MEMORY.md "ACTIVE WORK", check running PIDs, check cloud status
-- On session end: update MEMORY.md with current task, PIDs, log paths, next steps
+- On session start: check MEMORY.md, check SessionStart hook output, check running PIDs
+- On session end: update MEMORY.md with current task, next action, any running processes
 - This prevents context loss between sessions
+
+**Session Start Protocol:**
+- When SessionStart hook output contains an ACTION: line, execute those steps immediately
+- Don't wait for the user to ask. Don't ask permission. Just do it.
 
 **Operational Notes:**
 - My timezone (ask me)
-- Where credentials are stored (NEVER hardcode keys in project files)
-- How to run long tasks without blocking: `nohup <cmd> > /tmp/task_<name>.log 2>&1 &` then report PID + log path. Check with `tail -n 20 /tmp/task_<name>.log` or `ps -p <PID>`
+- Where credentials are stored (`~/.claude_credentials`, bash-sourceable)
+- How to run long tasks without blocking: `nohup <cmd> > /tmp/task_<name>.log 2>&1 &`
 - Push frequency (recommend: after every milestone)
 
 **Critical Rules:**
 - Project-specific invariants and gotchas
-- Things that must never be changed or overridden
 
 **Key Files table:**
 | File | Purpose |
@@ -67,25 +70,34 @@ The main instruction file Claude reads every session. Include:
 
 ## 2. .claude/rules/ folder
 
-Create `.claude/rules/` for specific rule files that Claude loads automatically:
+Create `.claude/rules/` for domain-specific rule files. Files here are auto-loaded into every conversation. Keep CLAUDE.md as a lean index, put detailed rules in separate files.
 
-- `banned-techniques.md` — Track approaches that don't work:
-```markdown
-# Banned Techniques
-Add failed approaches here so they're never retried.
-Format: What, Why it failed, Date
+Recommended structure:
+- `banned-techniques.md` — Track approaches that don't work (empty template to start)
+- One file per domain (e.g., `frontend.md`, `api.md`, `pipeline.md`) based on project structure
+- Each file focused on one domain's conventions, patterns, and gotchas
 
-## [Category]
-- (none yet)
-```
+## 3. .claude/settings.json (project-level hooks)
 
-## 3. Memory file
+Create project-level hooks for automatic health checks:
 
-Create an initial MEMORY.md in the auto-memory directory with:
+**SessionStart hook** — runs every conversation start:
+- Check git status
+- Check if backend server is running (if applicable)
+- Output ACTION: line telling Claude what to do
+
+**PostToolUse hooks** (if applicable):
+- TypeScript type-check after .tsx/.ts edits
+- Pycache clear after Python edits (for uvicorn --reload)
+- ESLint after JS edits
+
+## 4. Auto-memory
+
+Claude Code has built-in auto-memory at `~/.claude/projects/<project-hash>/memory/`. Seed it with an initial MEMORY.md:
 ```markdown
 # Project Memory
 
-## ACTIVE WORK (updated YYYY-MM-DD)
+## Current State
 - (nothing yet — update this every session end)
 
 ## Key Technical Findings
@@ -96,14 +108,11 @@ Create an initial MEMORY.md in the auto-memory directory with:
 
 ## User Preferences
 - (workflow preferences, tool choices, communication style)
-
-## See Also
-- CLAUDE.md for project rules
 ```
 
-Explain that this file persists across conversations and Claude reads it at the start of every session. It should contain stable knowledge, not session-specific details (except the ACTIVE WORK section).
+Explain that this file persists across conversations and Claude reads it at the start of every session.
 
-## 4. .gitignore
+## 5. .gitignore
 
 Ensure these are ignored:
 ```
@@ -116,47 +125,40 @@ node_modules/
 .DS_Store
 ```
 
-## 5. Hooks (if notifications wanted)
+## 6. User-level hooks (~/.claude/settings.json)
 
-If I want notifications, help me configure `~/.claude/settings.json` hooks:
+If I want notifications, help me configure user-level hooks:
 
 **PreCompact hook** (fires before context window compaction):
-- Send notification: "Context compacting, saving state"
 - Echo instructions to update MEMORY.md before context is lost
+- Send notification if configured
 - This is the MOST important hook — prevents losing work-in-progress
 
 **Permission prompt hook** (fires when Claude needs approval):
 - Send notification so I know to check the terminal
 
-**Idle notification hook** (fires when Claude finishes and waits):
-- Relay mechanism: Claude writes to a temp file, hook reads and sends it
-- Only sends if file exists and is non-empty (no spam)
+**Idle notification hook** (smart relay):
+- Claude writes to `/tmp/claude_telegram_msg.txt` before going idle
+- Hook reads file, sends via Telegram, deletes file
+- No file = no notification = no spam
 
 Supported notification methods:
 - **Telegram**: Create a bot via @BotFather, get chat_id via getUpdates API
 - **Email**: Via sendmail or API
 - **Desktop**: Via OS notification command
-- **None**: Skip hooks setup
+- **None**: Skip notification hooks, keep PreCompact echo-only
 
-## 6. Skills (if repeating workflows exist)
+## 7. Skills (if repeating workflows exist)
 
 If the project has repeating multi-step workflows, create `.claude/skills/` with:
-- Each skill in its own subfolder with a prompt.md
-- At minimum suggest `/resume` (pick up from last session) and `/status` (check running things)
-
-## 7. Documentation structure
-
-If external collaborators or agents need context:
-- Create `doc/` folder
-- Include a data map (what files exist where, what they contain)
-- Include architecture overview
+- Each skill in its own subfolder with a SKILL.md
+- At minimum suggest `/status` (check running things)
 
 ## 8. Platform-specific notes
 
 **Windows:**
 - Every Python script needs: `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` at the top (console encoding issue)
 - Use forward slashes in bash commands, not backslashes
-- `python_embeded/python.exe` if using bundled Python (typo is intentional in some packages)
 
 **All platforms:**
 - Never block the agentic loop waiting for long processes
@@ -175,18 +177,18 @@ After creating everything, give me a summary checklist of what was created and a
 | Component | Purpose |
 |-----------|---------|
 | `CLAUDE.md` | Project rules, loaded every session |
-| `.claude/rules/*.md` | Specific rule files (banned techniques, etc.) |
-| `MEMORY.md` (auto-memory) | Persistent cross-session state |
+| `.claude/rules/*.md` | Domain-specific rule files (auto-loaded) |
+| `.claude/settings.json` | Project-level hooks (SessionStart, PostToolUse) |
+| `~/.claude/settings.json` hooks | User-level hooks (PreCompact, Notification) |
+| Auto-memory `MEMORY.md` | Persistent cross-session state |
 | `.gitignore` | Keep secrets and temp files out of git |
-| `~/.claude/settings.json` hooks | Notifications + compaction safety net |
 | `.claude/skills/` | Reusable multi-step workflows |
-| `doc/` | External collaborator context |
 
 ## Key principles behind this setup
 
-1. **Session continuity** — MEMORY.md bridges the gap between conversations. Update it at session end, read it at session start.
-2. **Compaction safety** — The PreCompact hook is a lifesaver. Context compaction can happen at any time and wipes your working state. The hook gives Claude a chance to save.
-3. **Credentials centralization** — One file, sourced by bash. Never in project dirs, never in git.
-4. **Banned techniques** — Track what doesn't work. Without this, you'll retry failed approaches across sessions.
-5. **Scope separation** — If multiple agents touch the same repo, clearly define who owns what. Prevents conflicts and duplicated work.
+1. **Session continuity** — Auto-memory bridges the gap between conversations. SessionStart hooks automatically check project health. PreCompact hooks protect against context loss.
+2. **Two levels of hooks** — User-level (`~/.claude/settings.json`) for global behavior (notifications, PreCompact). Project-level (`.claude/settings.json`) for project-specific automation (health checks, type-checking).
+3. **Rules in `.claude/rules/`** — Keep CLAUDE.md lean (under 150 lines). Detailed domain rules go in separate files that are auto-loaded.
+4. **Credentials centralization** — One file (`~/.claude_credentials`), sourced by bash. Never in project dirs, never in git.
+5. **Banned techniques** — Track what doesn't work. Without this, you'll retry failed approaches across sessions.
 6. **File-first outputs** — Anything important goes to a file, not just chat. Chat gets compacted; files persist.

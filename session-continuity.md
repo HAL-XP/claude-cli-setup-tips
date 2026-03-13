@@ -6,15 +6,15 @@ Claude Code sessions are ephemeral — context compaction or a new conversation 
 
 **For Claude**: If the user asked you to set up session continuity, follow these steps:
 
-1. **Check what exists** — scan for CLAUDE.md, MEMORY.md (in auto-memory dir), `.claude/skills/resume/`, `~/.claude/settings.json` (PreCompact hook), and any `*summary*` files. Report what you found and what's missing.
+1. **Check what exists** — scan for CLAUDE.md, `.claude/settings.json` (SessionStart/PreCompact hooks), `~/.claude/settings.json` (user-level hooks), auto-memory files at `~/.claude/projects/*/memory/`, and any `*summary*` files. Report what you found and what's missing.
 2. **Ask the user**:
-   - "What's your timezone?" (for timestamps in ACTIVE WORK)
+   - "What's your timezone?" (for timestamps)
    - "Do you run background processes that need tracking between sessions?" (PIDs, logs)
-   - "Do you use cloud GPU instances?" (add cloud check to /resume)
-   - "Do you have multiple Claude agents on this project?" (add comms check to /resume)
+   - "Do you have a backend server that should be checked on session start?" (URL for health check)
+   - "Do you have multiple Claude agents on this project?" (add comms check)
    - For each existing file found: "Keep / Merge new content / Replace?"
-3. **Create missing files** — MEMORY.md, /resume skill, PreCompact hook entry. Merge session continuity section into CLAUDE.md if it exists.
-4. **Verify** — run `/resume` to confirm everything works.
+3. **Create missing files** — MEMORY.md in auto-memory, SessionStart hook in `.claude/settings.json`, PreCompact hook in `~/.claude/settings.json`. Merge session continuity section into CLAUDE.md if it exists.
+4. **Verify** — start a new conversation to confirm SessionStart hook fires correctly.
 
 ---
 
@@ -26,74 +26,128 @@ Without session continuity:
 - Decisions made 2 sessions ago get re-debated
 - Dead-end approaches get retried
 
-## Pattern 1: MEMORY.md with ACTIVE WORK
+## Pattern 1: Auto-Memory System
 
-Claude Code has an auto-memory directory at `~/.claude/projects/<project-hash>/memory/`. Files here persist across conversations and MEMORY.md is loaded into every session's context.
+Claude Code has a built-in auto-memory system at `~/.claude/projects/<project-hash>/memory/`. Files here persist across conversations and are loaded into every session's context.
 
-### Structure
+### MEMORY.md as the main index
+
+The primary file is `MEMORY.md`. Claude reads it automatically at the start of every conversation.
 
 ```markdown
 # Project Memory
 
-## ACTIVE WORK (updated YYYY-MM-DD, HH:MM TZ)
-- **Current task**: What's in progress right now
-- **Background processes**: PID 12345 doing X, log at /tmp/task_X.log
-- **Cloud instances**: provider, ID, cost/hr, purpose
-- **Pending decisions**: What's blocking, what data is needed
-- **Next action**: Exactly what to do next
+## Current State (2026-03-13)
+- **Active project**: minimaltest
+- **Last commit**: `e156fd9` — session 20 changes
+- **Next action**: Run orientation QA batch test
 
 ## Key Technical Findings
-- Finding 1 (confirmed across N tests)
-- Finding 2
+- Three.js version pinning: model-viewer uses three as peer dep — versions must match (0.x semver)
+- UE5 Rotator constructor: Rotator(roll, pitch, yaw) — use named properties
+- MOVABLE mobility required: Default STATIC renders gray without baked lightmaps
 
 ## Architecture Decisions
-- Decision + rationale + date
+- Non-destructive front face system: preview offset in viewer, Save to bake into GLB
+- Circulation clearance: 22 space categories with atmosphere modifiers
 
 ## User Preferences
-- Workflow preferences
-- Communication style
-- Tool choices
+- Always restart API after backend changes (user never does it)
+- Move forward autonomously unless blocked
+- Frontend agents must read UX rules first
+
+## Memory Files
+- `project_gltf_transform.md`: gltf-transform integration status
+- `project_orientation_qa.md`: Batch orientation QA plan
 ```
 
+### Additional memory files
+
+For topics that need more detail than MEMORY.md can hold, create individual files in the same directory:
+
+```
+~/.claude/projects/<hash>/memory/
+  MEMORY.md                      # Main index (keep under 200 lines)
+  project_gltf_transform.md      # Detailed topic file
+  project_orientation_qa.md      # Another topic
+  plan_tab_restructure.md        # Completed plan (can be archived)
+```
+
+Reference these from MEMORY.md so Claude knows they exist.
+
 ### Rules
-- **ACTIVE WORK gets updated every session end** — this is the handoff to the next session
-- **Keep MEMORY.md under 200 lines** — only the first 200 are loaded. Use topic files for overflow (e.g., `memory/debugging.md`, `memory/architecture.md`) and link from MEMORY.md.
+- **Keep MEMORY.md under 200 lines** — Claude loads this every session. Use topic files for overflow.
 - **Only store stable knowledge** — things confirmed across multiple interactions. Don't write speculative conclusions from reading one file.
 - **Delete/update stale entries** — wrong memory is worse than no memory.
+- **Update at every session end** — this is the handoff to the next session.
 
 ### CLAUDE.md instruction to add
 
 ```markdown
 ## Session Continuity (MANDATORY)
-- **On session start**: Check MEMORY.md "ACTIVE WORK", running PIDs, cloud instances, pending results.
-- **On session end**: Update MEMORY.md with current task, PIDs, log paths, next action.
+- **On session start**: Check MEMORY.md current state, running PIDs, server health.
+- **On session end**: Update MEMORY.md with current task, next action, any running processes.
+- When you see the "COMPACTION IMMINENT" message from PreCompact hook, you MUST immediately:
+  1. Update MEMORY.md with current state
+  2. Commit/push unsaved work
+  3. Send a notification if configured
+  Do this BEFORE anything else.
 ```
 
-## Pattern 2: The /resume Skill
+## Pattern 2: SessionStart Hooks
 
-Create a custom skill that runs at the start of every session. It's a checklist that ensures nothing is missed.
+Instead of relying on a custom `/resume` skill, use `SessionStart` hooks to automatically check project health every time a new conversation begins.
 
-**File: `.claude/skills/resume/SKILL.md`**
+**Project-level `.claude/settings.json`:**
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"=== SESSION INIT ===\"; echo \"Project: MyProject\"; echo \"---\"; echo \"Git status:\"; git status --short 2>/dev/null | head -15; echo \"---\"; echo \"API:\"; curl -sf http://localhost:8000/health 2>/dev/null && echo \" running\" || echo \" NOT running\"; echo \"---\"; echo \"ACTION: Read MEMORY.md for current state. Commit any uncommitted work first. Restart API if not running.\"'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**User-level `~/.claude/settings.json`** (applies to all projects):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"=== SESSION INIT ===\"; echo \"CWD: $(pwd)\"; echo \"Git branch: $(git branch --show-current 2>/dev/null || echo N/A)\"; echo \"Uncommitted: $(git status --short 2>/dev/null | wc -l | tr -d \" \") files\"; echo \"===\"'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The `ACTION:` line tells Claude what to do. Pair it with this CLAUDE.md section:
 
 ```markdown
----
-description: Pick up where the last session left off
-user_invocable: true
----
-
-Do the following checks IN ORDER:
-
-1. Read MEMORY.md "ACTIVE WORK" section
-2. Check for running background processes: `ps aux | grep -E "python|node|train" | grep -v grep`
-3. Check cloud instances if applicable (e.g., `vastai show instances`)
-4. Check for pending results in output directories
-5. Check inter-agent messages if multi-agent (see multi-agent-coordination.md)
-6. Report status and ask what to work on
-
-Do NOT start new work without completing these checks.
+## Session Start Protocol
+When you see `SessionStart` hook output containing an `ACTION:` line, **execute those steps immediately before responding to the user**. Typical actions:
+1. Read `MEMORY.md` for current state
+2. Commit any uncommitted work (check git status, stage files, commit + push)
+3. Restart API if not running
+Do not wait for the user to ask. Do not ask permission. Just do it.
 ```
-
-Users invoke with `/resume` at the start of every session.
 
 ## Pattern 3: Pre-Compact Hook
 
@@ -106,8 +160,13 @@ Context compaction can happen at any time when the conversation gets long. Witho
   "hooks": {
     "PreCompact": [
       {
-        "type": "command",
-        "command": "echo 'COMPACTION IMMINENT. You MUST immediately: 1) Update MEMORY.md ACTIVE WORK section with current task, PIDs, log paths, next steps. 2) Commit and push unsaved work. Do these NOW before context is lost.'"
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'COMPACTION IMMINENT. You MUST immediately: 1) Update MEMORY.md ACTIVE WORK section with current task, PIDs, log paths, next steps. 2) Commit and push unsaved work. Do these NOW before context is lost.'"
+          }
+        ]
       }
     ]
   }
@@ -116,35 +175,29 @@ Context compaction can happen at any time when the conversation gets long. Witho
 
 When compaction triggers, Claude sees this message and (if properly instructed in CLAUDE.md) saves state before context is wiped.
 
-**CLAUDE.md instruction to add:**
-
-```markdown
-When you see the "COMPACTION IMMINENT" message, you MUST immediately:
-1. Update MEMORY.md with current state
-2. Commit/push unsaved work
-3. Send a notification if configured
-Do this BEFORE anything else.
-```
+**The echo trick**: The hook's stdout is shown to Claude. By echoing "COMPACTION IMMINENT..." in the hook, Claude receives explicit instructions to save state. This is what makes it work — the notification alone isn't enough.
 
 ## Pattern 4: Daily Summary Files
 
 For projects with many sessions per day, maintain a running log:
 
 ```
-project_output/_summary-YYYYMMDD.txt
+summary/summary-YYYYMMDD.md
 ```
 
 Format:
 ```
-Daily Summary — 2026-03-10
+# Daily Summary — 2026-03-10
 
-## Phase 1: [Description] (~10:00-14:00 CET)
-- 10:00: Started X
-- 12:00: Found bug Y, fixed with Z
-- 14:00: Results: [scores/metrics]
+## Session 1: Pipeline refactor (~10:00-14:00 CET)
+- Commits: `abc1234`, `def5678`
+- Completed circulation clearance system
+- Found bug: Three.js version mismatch with model-viewer
 
-## Phase 2: [Description] (~15:00-18:00 CET)
-...
+## Session 2: Frontend QA (~15:00-18:00 CET)
+- Commits: `ghi9012`
+- Built orientation QA frontend
+- Known issue: Vite cache needs clearing after npm install
 ```
 
 This complements MEMORY.md (which tracks current state) with a chronological record of what happened and when.
@@ -157,7 +210,7 @@ Chat gets compacted. Strategy analysis, research findings, experiment results �
 
 ```
 output/strategy/analysis_20260310.md
-output/research_notes/research_notes_001.txt
+output/decisions/2026-03-12_auth-architecture.md
 output/LEARNINGS.json
 ```
 

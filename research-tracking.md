@@ -11,6 +11,7 @@ Patterns for tracking what you've tried, what worked, what didn't, and what you 
    - Any `LEARNINGS*`, `TEST_TREE*`, `test_registry*`, `changelog*` files
    - `output/strategy/` or `docs/decisions/` or similar
    - CLAUDE.md sections about tracking, experiments, or dead ends
+   - Auto-memory files at `~/.claude/projects/*/memory/` — existing learnings stored there?
    - Report findings
 2. **Ask the user**:
    - "What kind of work are you tracking?" (feature iterations, experiments, debugging, research, all of the above)
@@ -100,13 +101,6 @@ Persistent cross-session learnings — things you've confirmed are true about yo
       "finding": "Cold starts on Lambda exceed 3s with our bundle size — need provisioned concurrency or switch to ECS",
       "confidence": "high",
       "date_confirmed": "2026-03-07"
-    },
-    {
-      "id": 3,
-      "category": "testing",
-      "finding": "Integration tests catch 80% of prod bugs; unit tests on utils are low-value for this codebase",
-      "confidence": "medium",
-      "date_confirmed": "2026-03-10"
     }
   ]
 }
@@ -117,6 +111,8 @@ CLAUDE.md instruction:
 Before trying a new approach, check LEARNINGS.json for relevant findings.
 After confirming a finding across multiple instances, add it to LEARNINGS.json.
 ```
+
+**Note on auto-memory**: For simpler projects, Claude's built-in auto-memory (`~/.claude/projects/<hash>/memory/`) can serve the same purpose as LEARNINGS.json. Learnings stored as memory entries (especially with the "Key Technical Findings" section of MEMORY.md) are automatically loaded every session. Use LEARNINGS.json when you want machine-parseable structured data or when the volume of learnings exceeds what fits in MEMORY.md.
 
 ## Pattern 4: Decision Documents
 
