@@ -1,0 +1,94 @@
+{
+  "_comment_1": "=== USER-LEVEL: ~/.claude/settings.json ===",
+  "_comment_2": "These hooks apply to ALL projects",
+
+  "user_level_example": {
+    "permissions": {
+      "allow": ["Bash(ls:*)"]
+    },
+    "autoUpdatesChannel": "latest",
+    "skipDangerousModePermissionPrompt": true,
+    "effortLevel": "high",
+    "hooks": {
+      "SessionStart": [
+        {
+          "matcher": "startup",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash -c 'echo \"=== SESSION INIT ===\"; echo \"CWD: $(pwd)\"; echo \"Git branch: $(git branch --show-current 2>/dev/null || echo N/A)\"; echo \"Uncommitted: $(git status --short 2>/dev/null | wc -l | tr -d \" \") files\"; echo \"===\"'"
+            }
+          ]
+        }
+      ],
+      "PreCompact": [
+        {
+          "matcher": "",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash -c 'echo \"COMPACTION IMMINENT. You MUST immediately: 1) Update MEMORY.md ACTIVE WORK section with current task, PIDs, log paths, next steps. 2) Commit and push any unsaved work. Do these NOW before context is lost.\"'"
+            }
+          ]
+        }
+      ],
+      "Notification": [
+        {
+          "matcher": "permission_prompt",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash -c 'source ~/.claude_credentials 2>/dev/null && curl -s \"https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage\" -d \"chat_id=${TELEGRAM_CHAT_ID}\" -d \"text=[Claude] Permission prompt - check terminal\" > /dev/null 2>&1 || true'"
+            }
+          ]
+        },
+        {
+          "matcher": "idle_prompt",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash -c 'MSG_FILE=/tmp/claude_telegram_msg.txt; if [ -s \"$MSG_FILE\" ]; then source ~/.claude_credentials 2>/dev/null && MSG=$(cat \"$MSG_FILE\") && curl -s \"https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage\" --data-urlencode \"chat_id=${TELEGRAM_CHAT_ID}\" --data-urlencode \"text=${MSG}\" > /dev/null 2>&1; rm -f \"$MSG_FILE\"; fi'"
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "_comment_3": "=== PROJECT-LEVEL: .claude/settings.json ===",
+  "_comment_4": "These hooks apply to THIS project only",
+
+  "project_level_example": {
+    "hooks": {
+      "SessionStart": [
+        {
+          "matcher": "startup",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash -c 'echo \"=== SESSION INIT ===\"; echo \"Project: MyProject\"; echo \"---\"; echo \"Git status:\"; git status --short 2>/dev/null | head -15; echo \"---\"; echo \"API:\"; curl -sf http://localhost:8000/health 2>/dev/null && echo \" running\" || echo \" NOT running\"; echo \"Frontend:\"; curl -sf http://localhost:5173 >/dev/null 2>&1 && echo \" running\" || echo \" NOT running\"; echo \"---\"; echo \"ACTION: Read MEMORY.md for current state. Commit any uncommitted work first. Restart API if not running.\"'"
+            }
+          ]
+        }
+      ],
+      "PostToolUse": [
+        {
+          "matcher": "Edit|Write",
+          "hooks": [
+            {
+              "_comment": "TypeScript type-check after .tsx/.ts edits",
+              "type": "command",
+              "command": "FILE=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // empty') && if echo \"$FILE\" | grep -qE '\\.(tsx|ts)$'; then cd /path/to/frontend && npx tsc --noEmit 2>&1 | head -20; fi"
+            },
+            {
+              "_comment": "Clear pycache after Python edits for uvicorn --reload",
+              "type": "command",
+              "command": "FILE=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // empty') && if echo \"$FILE\" | grep -qE '(api|pipeline|scripts)/.*\\.py$'; then find /path/to/project/api /path/to/project/pipeline -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null; echo '[hook] Cleared pycache -- uvicorn --reload will pick up changes'; fi",
+              "timeout": 10
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
