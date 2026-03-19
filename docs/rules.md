@@ -12,7 +12,7 @@ Files in `.claude/rules/` are loaded into every conversation for the project. Cl
   python-api.md        # FastAPI routes, restart protocol
   pipeline.md          # Stage order, naming conventions
   ux.md                # UX principles, state-driven UI
-  hours-tracking.md    # Hours log format
+  hours-tracking.md    # Hours log format (_devlog/hours/)
   banned-techniques.md # Dead ends -- never retry these
   pipeline-knowledge.md # Cross-cutting pipeline knowledge
 ```

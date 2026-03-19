@@ -151,12 +151,72 @@ Run `/memory` to:
 - Open the auto memory folder
 - Select any file to open in your editor
 
-## Daily Summaries (Optional)
+## Devlog (`_devlog/`) (Optional)
 
-For projects with many sessions per day, maintain a running log:
+For projects with many sessions per day, maintain a structured devlog at the project root. The underscore prefix keeps it sorted to the top in file explorers.
 
 ```
-summary/summary-YYYYMMDD.md
+_devlog/
+  summaries/          # Daily session summaries
+    summary_YYYYMMDD.md
+  hours/              # Human-equivalent hours tracking
+    hours_YYYYMMDD.md
+  decisions/          # Architecture decision records
+    YYYYMMDD_topic.md
+  experiments/        # Trial/spike results (adopt or kill)
+    YYYYMMDD_topic.md
+```
+
+### Summaries
+
+After each major piece of work, append to `_devlog/summaries/summary_YYYYMMDD.md`:
+
+```markdown
+## HH:MM -- Short title
+- What was done
+- Key decisions made
+- Files changed
+```
+
+### Hours Tracking
+
+Log human-equivalent hours to `_devlog/hours/hours_YYYYMMDD.md`:
+
+```markdown
+# Hours Log -- YYYY-MM-DD
+
+| Task | Claude Time | Human Equiv. | Notes |
+|------|-------------|--------------|-------|
+| Built auth flow | 12min | 4h | New feature, OAuth integration |
+| Fixed pagination bug | 3min | 30min | Edge case in cursor logic |
+```
+
+- "Human Equiv." = how long a skilled human developer would take for the same task
+- One file per day, matching the summaries pattern
+- Update at natural milestones, not after every tiny change
+
+### Decisions
+
+Record architecture choices in `_devlog/decisions/YYYYMMDD_topic.md`:
+
+```markdown
+# Auth Approach -- 2026-03-19
+
+**Decision**: JWT with refresh tokens stored in httpOnly cookies.
+**Alternatives considered**: Session-based auth, OAuth-only
+**Why**: Stateless backend, no session store needed, mobile-friendly
+```
+
+### Experiments
+
+Record trial results in `_devlog/experiments/YYYYMMDD_topic.md`:
+
+```markdown
+# LPIPS for Image Similarity -- 2026-03-10
+
+**Goal**: Use LPIPS to detect duplicate/similar assets
+**Result**: Requires GPU, results inconsistent across runs
+**Verdict**: KILL -- added to banned-techniques.md
 ```
 
 This complements MEMORY.md (current state) with a chronological record of what happened.

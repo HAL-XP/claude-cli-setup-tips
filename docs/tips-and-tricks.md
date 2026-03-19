@@ -48,12 +48,17 @@ After implementing a feature, verify it works yourself:
 
 **Anything important goes to a file, not just chat.**
 
-Chat gets compacted. Strategy analysis, research findings, experiment results -- if they only exist in the conversation, they are gone after compaction. Save them:
+Chat gets compacted. Strategy analysis, research findings, experiment results -- if they only exist in the conversation, they are gone after compaction. Save them to the `_devlog/` directory:
 
 ```
-output/strategy/analysis_20260310.md
-output/decisions/2026-03-12_auth-architecture.md
+_devlog/
+  summaries/summary_20260310.md       # Session work log
+  hours/hours_20260310.md             # Human-equivalent hours
+  decisions/20260312_auth-arch.md     # Architecture decision records
+  experiments/20260310_lpips.md       # Trial results (adopt or kill)
 ```
+
+See [Memory > Devlog](memory.md#devlog-_devlog-optional) for the full structure and templates.
 
 ## Long-Running Processes
 
@@ -77,6 +82,106 @@ CLAUDE.md instruction:
 ## Long-Running Commands
 - Use `nohup <command> > /tmp/task_<name>.log 2>&1 &` and echo the PID
 - Never block the agentic loop waiting for a process to finish
+```
+
+## Process Management (PID Tracking)
+
+**NEVER kill processes by name.** `taskkill //IM electron.exe //F` or `pkill python` carpet-bombs every instance on the machine — including other projects.
+
+**ALWAYS kill by PID**, using the process tree flag to catch child processes:
+
+```bash
+# Windows
+taskkill //PID <pid> //T //F
+
+# macOS / Linux
+kill -TERM <pid>
+```
+
+### Track PIDs in `.claude/.pids`
+
+When launching any long-running process, save its PID to a project-local file:
+
+```json
+{
+  "dev-server": 12345,
+  "api": 67890,
+  "worker": 11111
+}
+```
+
+**Launching:**
+
+```bash
+# Save PID when launching a background process
+nohup npm run dev > /tmp/dev-server.log 2>&1 &
+PID=$!
+# Write to .claude/.pids (create if needed)
+node -e "
+  const fs = require('fs');
+  const f = '.claude/.pids';
+  const pids = fs.existsSync(f) ? JSON.parse(fs.readFileSync(f)) : {};
+  pids['dev-server'] = $PID;
+  fs.writeFileSync(f, JSON.stringify(pids, null, 2));
+"
+```
+
+**Killing:**
+
+```bash
+# Read PID and kill only that process tree
+PID=$(node -e "const p=JSON.parse(require('fs').readFileSync('.claude/.pids'));console.log(p['dev-server']||'')")
+if [ -n "$PID" ]; then
+  taskkill //PID $PID //T //F 2>/dev/null   # Windows
+  # kill -TERM $PID 2>/dev/null             # macOS/Linux
+fi
+```
+
+**Self-registering from an app:**
+
+Electron, Node, or Python apps can write their own PID on startup:
+
+```typescript
+// In Electron main process or Node server entry
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs'
+
+const PIDS_FILE = '.claude/.pids'
+function registerPid(name: string) {
+  mkdirSync('.claude', { recursive: true })
+  const pids = existsSync(PIDS_FILE) ? JSON.parse(readFileSync(PIDS_FILE, 'utf-8')) : {}
+  pids[name] = process.pid
+  writeFileSync(PIDS_FILE, JSON.stringify(pids, null, 2))
+}
+
+function unregisterPid(name: string) {
+  try {
+    const pids = JSON.parse(readFileSync(PIDS_FILE, 'utf-8'))
+    delete pids[name]
+    writeFileSync(PIDS_FILE, JSON.stringify(pids, null, 2))
+  } catch {}
+}
+
+registerPid('electron')
+process.on('exit', () => unregisterPid('electron'))
+process.on('SIGTERM', () => { unregisterPid('electron'); process.exit(0) })
+```
+
+**Add to .gitignore:**
+
+```gitignore
+.claude/.pids
+```
+
+### CLAUDE.md / Rules Instruction
+
+Add to your project's rules or CLAUDE.md:
+
+```markdown
+## Process Management
+- NEVER kill by process name — always by PID from `.claude/.pids`
+- Save PIDs when launching background processes
+- Kill with `taskkill //PID <pid> //T //F` (Windows) or `kill -TERM <pid>` (macOS/Linux)
+- Verify the PID still exists before killing: `tasklist //FI "PID eq <pid>"` (Windows)
 ```
 
 ## API Restart Protocol

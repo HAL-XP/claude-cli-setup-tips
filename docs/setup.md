@@ -125,6 +125,7 @@ node_modules/
 .DS_Store
 .claude/settings.local.json
 .claude/agent-memory-local/
+.claude/.pids
 ```
 
 ## Platform-Specific Notes
