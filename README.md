@@ -6,6 +6,14 @@ Framework-agnostic. Works for any project where Claude Code is your development 
 
 Based on Claude Code v2.1.76+ (March 2026) with Opus 4.6 (1M context).
 
+## Automated Setup with Claudeborn
+
+Want to skip the manual setup? **[Claudeborn](https://github.com/HAL-XP/Claudeborn)** is an Electron wizard that applies these best practices automatically — just describe your project and it generates CLAUDE.md, hooks, rules, agents, devlog, and launch scripts in seconds.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/HAL-XP/Claudeborn/master/screenshots/languages.png" alt="Claudeborn" width="600" />
+</p>
+
 ## Quick Start
 
 1. Read [Setup](docs/setup.md) for installation and first-run configuration
