@@ -1,0 +1,243 @@
+{
+  "currentVersion": "0.1.0",
+  "minClaudeCodeVersion": "2.1.80",
+  "releases": [
+    {
+      "version": "0.0.1",
+      "date": "2026-03-10",
+      "description": "Baseline — pre-March 2026 updates",
+      "features": [
+        {
+          "id": "session-start-hook",
+          "title": "SessionStart hook (project health check)",
+          "type": "new",
+          "mechanical": true,
+          "targets": [".claude/settings.json"],
+          "doc": "docs/hooks.md#1-sessionstart-project-health-check"
+        },
+        {
+          "id": "precompact-hook",
+          "title": "PreCompact hook (context loss prevention)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["~/.claude/settings.json"],
+          "doc": "docs/hooks.md#2-precompact-context-loss-prevention"
+        },
+        {
+          "id": "telegram-hooks",
+          "title": "Telegram notifications via hooks (permission, compaction, smart relay)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["~/.claude/settings.json", "~/.claude/CLAUDE.md"],
+          "doc": "docs/telegram-notifications.md"
+        },
+        {
+          "id": "auto-memory",
+          "title": "Auto memory with MEMORY.md index",
+          "type": "new",
+          "mechanical": false,
+          "targets": ["CLAUDE.md"],
+          "doc": "docs/memory.md"
+        },
+        {
+          "id": "devlog",
+          "title": "Devlog structure (_devlog/ with summaries, hours, decisions, experiments)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["_devlog/", "CLAUDE.md", ".claude/rules/hours-tracking.md"],
+          "doc": "docs/memory.md#devlog-_devlog-optional"
+        },
+        {
+          "id": "rules-directory",
+          "title": "Auto-loaded rules in .claude/rules/",
+          "type": "new",
+          "mechanical": true,
+          "targets": [".claude/rules/"],
+          "doc": "docs/rules.md"
+        },
+        {
+          "id": "banned-techniques",
+          "title": "Banned techniques file for dead ends",
+          "type": "new",
+          "mechanical": true,
+          "targets": [".claude/rules/banned-techniques.md"],
+          "doc": "docs/rules.md"
+        },
+        {
+          "id": "agent-templates",
+          "title": "Specialized agent templates in .claude/agents/",
+          "type": "new",
+          "mechanical": false,
+          "targets": [".claude/agents/"],
+          "doc": "docs/agents.md"
+        },
+        {
+          "id": "orchestrator-pattern",
+          "title": "Orchestrator pattern for multi-agent coordination",
+          "type": "new",
+          "mechanical": false,
+          "targets": ["CLAUDE.md"],
+          "doc": "docs/orchestrator-pattern.md"
+        },
+        {
+          "id": "pid-tracking",
+          "title": "PID-based process management (.claude/.pids)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["CLAUDE.md", ".claude/rules/"],
+          "doc": "docs/tips-and-tricks.md#process-management-pid-tracking"
+        },
+        {
+          "id": "credentials-file",
+          "title": "Centralized credentials in ~/.claude_credentials",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["~/.claude_credentials", "CLAUDE.md"],
+          "doc": "docs/setup.md#credential-management"
+        },
+        {
+          "id": "worktree-isolation",
+          "title": "Git worktree isolation for parallel agents",
+          "type": "new",
+          "mechanical": false,
+          "targets": [".claude/agents/"],
+          "doc": "docs/worktrees.md"
+        },
+        {
+          "id": "mcp-servers",
+          "title": "MCP server configuration (.mcp.json)",
+          "type": "new",
+          "mechanical": false,
+          "targets": [".mcp.json"],
+          "doc": "docs/mcp-servers.md"
+        }
+      ]
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-03-21",
+      "description": "March 2026 updates — Channels, scheduled tasks, voice mode, 1M context",
+      "features": [
+        {
+          "id": "channels-telegram",
+          "title": "Claude Code Channels — Telegram (official 2-way integration)",
+          "type": "new",
+          "mechanical": false,
+          "targets": ["~/.claude/settings.json", "~/.claude/CLAUDE.md"],
+          "requires": ["credentials-file"],
+          "replaces": ["telegram-hooks"],
+          "doc": "docs/channels.md",
+          "minVersion": "2.1.80"
+        },
+        {
+          "id": "channels-discord",
+          "title": "Claude Code Channels — Discord",
+          "type": "new",
+          "mechanical": false,
+          "targets": ["~/.claude/settings.json"],
+          "doc": "docs/channels.md#discord",
+          "minVersion": "2.1.80"
+        },
+        {
+          "id": "channels-custom",
+          "title": "Custom MCP channels (webhooks, CI alerts)",
+          "type": "new",
+          "mechanical": false,
+          "targets": [".mcp.json"],
+          "doc": "docs/channels.md#custom-channels",
+          "minVersion": "2.1.80"
+        },
+        {
+          "id": "scheduled-tasks",
+          "title": "Scheduled tasks (/loop + cron tools)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["CLAUDE.md"],
+          "doc": "docs/scheduled-tasks.md",
+          "minVersion": "2.1.72"
+        },
+        {
+          "id": "voice-mode",
+          "title": "Voice mode (push-to-talk with /voice)",
+          "type": "new",
+          "mechanical": false,
+          "targets": [],
+          "doc": "docs/voice-mode.md",
+          "minVersion": "2.1.69"
+        },
+        {
+          "id": "postcompact-hook",
+          "title": "PostCompact hook (auto-resume after compaction)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["~/.claude/settings.json"],
+          "doc": "docs/hooks.md#postcompact",
+          "minVersion": "2.1.76"
+        },
+        {
+          "id": "stop-failure-hook",
+          "title": "StopFailure hook event (API error handling)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["~/.claude/settings.json"],
+          "doc": "docs/hooks.md#stopfailure",
+          "minVersion": "2.1.78"
+        },
+        {
+          "id": "effort-frontmatter",
+          "title": "Effort level frontmatter for agents and skills",
+          "type": "update",
+          "mechanical": true,
+          "targets": [".claude/agents/", ".claude/skills/"],
+          "doc": "docs/agents.md#frontmatter-fields",
+          "minVersion": "2.1.80"
+        },
+        {
+          "id": "auto-memory-directory",
+          "title": "autoMemoryDirectory setting (custom memory location)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["~/.claude/settings.json"],
+          "doc": "docs/memory.md#custom-memory-directory",
+          "minVersion": "2.1.74"
+        },
+        {
+          "id": "simplify-skill",
+          "title": "/simplify bundled skill (code quality review)",
+          "type": "new",
+          "mechanical": false,
+          "targets": [],
+          "doc": "docs/tips-and-tricks.md#simplify",
+          "minVersion": "2.1.63"
+        },
+        {
+          "id": "bare-flag",
+          "title": "--bare flag for scripted -p calls",
+          "type": "new",
+          "mechanical": false,
+          "targets": [],
+          "doc": "docs/tips-and-tricks.md#bare-mode",
+          "minVersion": "2.1.81"
+        },
+        {
+          "id": "mcp-elicitation",
+          "title": "MCP elicitation (interactive prompts from MCP servers)",
+          "type": "new",
+          "mechanical": false,
+          "targets": [],
+          "doc": "docs/mcp-servers.md#elicitation",
+          "minVersion": "2.1.76"
+        },
+        {
+          "id": "1m-context",
+          "title": "1M context window (Opus 4.6)",
+          "type": "update",
+          "mechanical": false,
+          "targets": [],
+          "doc": "docs/tips-and-tricks.md#1m-context",
+          "minVersion": "2.1.75"
+        }
+      ]
+    }
+  ]
+}

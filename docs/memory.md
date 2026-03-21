@@ -19,6 +19,18 @@ Auto memory is on by default since Claude Code v2.1.59. Toggle with `/memory` or
 { "autoMemoryEnabled": false }
 ```
 
+### Custom Memory Directory
+
+You can change where auto-memory files are stored with the `autoMemoryDirectory` setting:
+
+```json
+{ "autoMemoryDirectory": "/path/to/custom/memory/" }
+```
+
+This is useful if you want memory files in a shared or backed-up location. Default location remains `~/.claude/projects/<hash>/memory/`.
+
+Added in v2.1.74.
+
 ### Storage Location
 
 Each project gets its own memory directory:

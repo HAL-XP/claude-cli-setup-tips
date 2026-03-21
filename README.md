@@ -4,7 +4,7 @@ Battle-tested patterns for getting the most out of Claude Code CLI, learned from
 
 Framework-agnostic. Works for any project where Claude Code is your development partner.
 
-Based on Claude Code v2.1.76+ (March 2026) with Opus 4.6 (1M context).
+Based on Claude Code v2.1.81+ (March 2026) with Opus 4.6 (1M context).
 
 ## Automated Setup with Claudeborn
 
@@ -43,6 +43,9 @@ Want to skip the manual setup? **[Claudeborn](https://github.com/HAL-XP/Claudebo
 | [MCP Servers](docs/mcp-servers.md) | Playwright, GitHub, custom MCP integrations |
 | [Agent Teams](docs/agent-teams.md) | Experimental multi-agent collaboration (when to use, when to avoid) |
 | [Telegram Notifications](docs/telegram-notifications.md) | Remote monitoring, smart relay, permission alerts |
+| [Channels](docs/channels.md) | Two-way Telegram/Discord integration via MCP |
+| [Scheduled Tasks](docs/scheduled-tasks.md) | /loop, cron tools, recurring prompts |
+| [Voice Mode](docs/voice-mode.md) | Push-to-talk voice input |
 | [Tips & Lessons Learned](docs/tips-and-tricks.md) | Anti-patterns, rules of thumb, platform-specific gotchas |
 
 ### Real Examples
@@ -68,6 +71,8 @@ Want to skip the manual setup? **[Claudeborn](https://github.com/HAL-XP/Claudebo
 | Stale API after Python edits | PostToolUse auto-restart hook | [Hooks](docs/hooks.md) |
 | CLAUDE.md is 500 lines and growing | Rules directory + imports | [Rules](docs/rules.md) |
 | Multiple agents editing same file | Worktree isolation per agent | [Worktrees](docs/worktrees.md) |
+| Want to send commands from phone | Telegram/Discord Channels | [Channels](docs/channels.md) |
+| Need recurring automated checks | /loop scheduled tasks | [Scheduled Tasks](docs/scheduled-tasks.md) |
 
 ## Architecture at a Glance
 

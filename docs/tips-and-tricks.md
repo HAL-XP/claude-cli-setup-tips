@@ -268,6 +268,27 @@ Check the following and report status:
 | `/loop 5m <prompt>` | Run prompt on recurring interval |
 | `/batch <prompt>` | Parallel codebase migration |
 | `/btw <question>` | Side question (no context impact) |
+| `/simplify` | Review changed code for reuse, quality, efficiency |
+| `/color` | Customize UI colors |
+| `/copy` | Copy last response (optional index: `/copy N`) |
+| `/plan <desc>` | Enter plan mode with optional description |
+| `/context` | Show loaded context with actionable suggestions |
+| `/plugin install` | Install a plugin from a marketplace |
+| `/remote-control` | Bridge sessions to claude.ai/code (VS Code) |
+
+### /simplify (Code Quality Review)
+
+The `/simplify` bundled skill reviews your changed code for reuse opportunities, quality issues, and efficiency improvements. Run it after finishing a feature or refactor:
+
+```
+/simplify
+```
+
+Combine with `/loop` for recurring quality checks:
+
+```
+/loop 30m /simplify
+```
 
 ## Engineering Anti-Patterns
 
@@ -337,6 +358,28 @@ You will not remember across sessions. Write it down:
 | `skipDangerousModePermissionPrompt` | Skip the "are you sure?" when using bypass mode |
 | `enableRemoteControlForAllSessions` | Allow remote control of sessions |
 | `autoUpdatesChannel` | `latest` or `stable` for auto-updates |
+| `autoMemoryDirectory` | Custom path for auto-memory files (default: `~/.claude/projects/`) |
+
+### --bare Flag (Scripted Automation)
+
+When using `claude -p` in scripts or CI, the `--bare` flag skips hooks, LSP, and plugin sync for faster execution:
+
+```bash
+claude --bare -p "What is the main entry point of this project?"
+```
+
+Use this for scripted queries where you don't need the full session setup. Added in v2.1.81.
+
+### 1M Context Window
+
+Opus 4.6 with Max/Team/Enterprise plans now supports 1M token context (since v2.1.75). Practical implications:
+
+- **Less frequent compaction**: You can work longer before context is compressed
+- **Larger files readable**: Can read very large files in a single pass
+- **More agent context**: Subagents inherit the larger window
+- **Memory strategy change**: With 1M context, MEMORY.md is less critical for short sessions but still essential for cross-session persistence
+
+This doesn't change the fundamentals — still use PreCompact hooks, still keep MEMORY.md updated, still use file-first outputs. But you'll hit compaction less often.
 
 ## Session Name
 

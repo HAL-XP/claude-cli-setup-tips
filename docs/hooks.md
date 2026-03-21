@@ -36,7 +36,7 @@ Both files use the same format. Claude loads both and merges them.
 
 ## All Hook Event Types
 
-As of Claude Code v2.1.76, there are 20+ hook events across 6 categories:
+As of Claude Code v2.1.81, there are 20+ hook events across 6 categories:
 
 ### Lifecycle Events
 
@@ -68,6 +68,7 @@ As of Claude Code v2.1.76, there are 20+ hook events across 6 categories:
 | **PreCompact** | Before context compaction | `manual`, `auto` | No |
 | **PostCompact** | After context compaction | `manual`, `auto` | No |
 | **Stop** | Main agent finishes | (none) | Yes |
+| **StopFailure** | API error stops agent | (none) | No |
 | **SubagentStart** | Subagent spawned | Agent type name | No |
 | **SubagentStop** | Subagent finishes | Agent type name | Yes |
 | **TeammateIdle** | Agent team member goes idle | (none) | Yes |
@@ -148,7 +149,7 @@ POST event data to a URL endpoint:
 }
 ```
 
-## The 5 Essential Hooks
+## The 7 Essential Hooks
 
 These are the hooks that provide the most value. Set them up first.
 
@@ -235,7 +236,55 @@ With Telegram notification:
 }
 ```
 
-### 3. PostToolUse (Auto-Checks After Edits)
+### 3. PostCompact (Auto-Resume After Compaction)
+
+Fires AFTER context has been compacted, in contrast to PreCompact which fires BEFORE compaction begins. Use PostCompact to auto-reload state, re-read MEMORY.md, or restart monitoring that was lost during compaction.
+
+```json
+{
+  "hooks": {
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Context was just compacted. Read MEMORY.md immediately and resume pending work.'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Added in v2.1.76.
+
+### 4. StopFailure (API Error Recovery)
+
+Fires when the main agent stops due to an API error. Use it for sending a Telegram alert about the failure, logging the error, or triggering retry logic.
+
+```json
+{
+  "hooks": {
+    "StopFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'source ~/.claude_credentials 2>/dev/null && curl -s \"https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage\" -d \"chat_id=${TELEGRAM_CHAT_ID}\" -d \"text=[Claude] Session stopped due to API error\" > /dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Added in v2.1.78.
+
+### 5. PostToolUse (Auto-Checks After Edits)
 
 Fires after Claude uses a tool. Use for automatic type-checking, cache clearing, linting.
 
@@ -262,7 +311,7 @@ Fires after Claude uses a tool. Use for automatic type-checking, cache clearing,
 }
 ```
 
-### 4. Permission Prompt Notification
+### 6. Permission Prompt Notification
 
 Sends a notification when Claude needs permission to run a tool (user is AFK).
 
@@ -284,7 +333,7 @@ Sends a notification when Claude needs permission to run a tool (user is AFK).
 }
 ```
 
-### 5. Smart Relay (Idle Notification)
+### 7. Smart Relay (Idle Notification)
 
 When Claude finishes and goes idle, check for a message file. If it exists, send via Telegram.
 

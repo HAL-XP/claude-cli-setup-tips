@@ -2,6 +2,8 @@
 
 Telegram integration lets you monitor Claude Code remotely: permission prompts, context compaction warnings, milestone completions, and error alerts.
 
+> **Update (March 2026):** Claude Code v2.1.80 introduced [Channels](channels.md) — an official two-way Telegram integration. Hooks (documented below) remain useful for automated system events, but Channels add interactive two-way communication. See [Channels](channels.md) for the modern approach, or use both together.
+
 ## Setting Up Telegram
 
 ### 1. Create a Bot
@@ -210,6 +212,27 @@ osascript -e 'display notification "Claude needs attention" with title "Claude C
 notify-send "Claude Code" "Claude needs attention"
 ```
 
+## Channels vs Hooks: When to Use What
+
+Claude Code v2.1.80 introduced [Channels](channels.md) — a plugin-based system for two-way messaging with Telegram and Discord.
+
+| Feature | Hooks (this page) | Channels |
+|---------|-------------------|----------|
+| **Direction** | One-way (Claude → you) | Two-way (you ↔ Claude) |
+| **Auth** | Any (API key, claude.ai) | claude.ai login only |
+| **Setup** | curl in settings.json | `--channels plugin:telegram@claude-plugins-official` |
+| **Send commands from phone** | No | Yes |
+| **Automated system alerts** | Yes (best for this) | Possible but hooks are simpler |
+| **Works with all auth types** | Yes | No (claude.ai only) |
+
+### Recommended Setup
+
+Use **both** for the best experience:
+- **Hooks** for automated alerts: permission prompts, compaction warnings, smart relay
+- **Channel** for interactive control: send commands from your phone, ask questions, review output
+
+The hook-based permission alert fires instantly when Claude is blocked. The channel gives you a Telegram chat where you can respond, send new instructions, and see Claude's replies — all from your phone.
+
 ## Lessons Learned
 
 **What works:**
@@ -217,6 +240,7 @@ notify-send "Claude Code" "Claude needs attention"
 - `[AgentName]` prefix -- instantly know which agent sent it
 - Permission prompt alerts -- unblocks Claude when you are away
 - PreCompact notification -- gives you a heads-up that context is being compacted
+- Combining hooks (automated alerts) + Channels (interactive) for full coverage
 
 **What does NOT work:**
 - SubagentStop notifications -- too frequent, removed in practice

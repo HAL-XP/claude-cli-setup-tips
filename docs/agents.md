@@ -84,6 +84,7 @@ Before committing ANY change:
 | `model` | No | `sonnet`, `opus`, `haiku`, `inherit`, or a full model ID |
 | `permissionMode` | No | `default`, `acceptEdits`, `dontAsk`, `bypassPermissions`, `plan` |
 | `maxTurns` | No | Maximum agentic turns |
+| `effort` | No | `low`, `medium`, `high` — controls reasoning depth for this agent |
 | `skills` | No | Skills to preload into context |
 | `mcpServers` | No | MCP servers available to this agent |
 | `hooks` | No | Lifecycle hooks scoped to this agent |

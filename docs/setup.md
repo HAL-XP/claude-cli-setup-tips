@@ -20,7 +20,7 @@ Verify:
 claude --version
 ```
 
-As of March 2026, the latest version is v2.1.76+.
+As of March 2026, the latest version is v2.1.81+.
 
 ## First Run
 
@@ -184,3 +184,5 @@ After the basic setup:
 3. **[Hooks](hooks.md)** -- Add SessionStart and PreCompact hooks (highest impact)
 4. **[Memory](memory.md)** -- Seed your MEMORY.md with project state
 5. **[Agents](agents.md)** -- Create specialized agent templates (when your project grows)
+6. **[Channels](channels.md)** -- Two-way Telegram/Discord integration (optional)
+7. **[Scheduled Tasks](scheduled-tasks.md)** -- Recurring prompts with /loop
