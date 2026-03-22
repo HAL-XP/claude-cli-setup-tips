@@ -60,9 +60,53 @@ _devlog/
 
 See [Memory > Devlog](memory.md#devlog-_devlog-optional) for the full structure and templates.
 
-## Long-Running Processes
+## CLI Responsiveness (Never Block the Terminal)
 
-Never block the agentic loop waiting for a process to finish.
+**The #1 quality-of-life rule:** Never run a foreground command that takes more than ~5 seconds. The user loses the ability to type, interrupt (Ctrl+B), or redirect — extremely frustrating.
+
+### Use `run_in_background: true`
+
+For any Bash tool call expected to take more than a few seconds:
+
+```json
+{
+  "command": "python train.py --epochs 100",
+  "run_in_background": true
+}
+```
+
+Then check on it with `TaskOutput`:
+
+```json
+{
+  "task_id": "abc123",
+  "block": false,
+  "timeout": 5000
+}
+```
+
+### What must run in background
+
+- Generation scripts (TTS, image, model inference)
+- Downloads (models, datasets, large files)
+- Installs (`pip install`, `npm install`, `choco install`)
+- Audio/video playback
+- Builds and compilations
+- Anything with a loop, poll, or timeout
+- Test suites
+
+### CLAUDE.md instruction
+
+```markdown
+## CLI Responsiveness
+Never block the terminal. Any command expected to take more than ~5 seconds
+MUST use `run_in_background: true`. Keep the CLI interactive at all times.
+Use `TaskOutput` to check on background tasks when needed.
+```
+
+## Long-Running Processes (Detached)
+
+For processes that must survive session closure (servers, training jobs), use `nohup`:
 
 ```bash
 nohup <command> > /tmp/task_<name>.log 2>&1 &
@@ -76,13 +120,7 @@ ps -p <PID>
 tail -n 20 /tmp/task_<name>.log
 ```
 
-CLAUDE.md instruction:
-
-```markdown
-## Long-Running Commands
-- Use `nohup <command> > /tmp/task_<name>.log 2>&1 &` and echo the PID
-- Never block the agentic loop waiting for a process to finish
-```
+Note: `run_in_background` is for commands within the session. `nohup` is for processes that must outlive the session.
 
 ## Process Management (PID Tracking)
 
