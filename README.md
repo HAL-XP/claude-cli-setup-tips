@@ -39,6 +39,7 @@ Want to skip the manual setup? **[Claudeborn](https://github.com/HAL-XP/Claudebo
 |-------|---------------|
 | [Agent Templates](docs/agents.md) | `.claude/agents/` directory, frontmatter, specialization, tool control |
 | [Orchestrator Pattern](docs/orchestrator-pattern.md) | Main conversation delegates, never writes code inline |
+| [Dispatcher Model](docs/dispatcher-model.md) | Pure routing: 1-liner = do it, anything more = agent |
 | [Worktrees](docs/worktrees.md) | Parallel agent isolation with git worktrees |
 | [MCP Servers](docs/mcp-servers.md) | Playwright, GitHub, custom MCP integrations |
 | [Agent Teams](docs/agent-teams.md) | Experimental multi-agent collaboration (when to use, when to avoid) |
@@ -46,6 +47,13 @@ Want to skip the manual setup? **[Claudeborn](https://github.com/HAL-XP/Claudebo
 | [Channels](docs/channels.md) | Two-way Telegram/Discord integration via MCP |
 | [Scheduled Tasks](docs/scheduled-tasks.md) | /loop, cron tools, recurring prompts |
 | [Voice Mode](docs/voice-mode.md) | Push-to-talk voice input |
+| [TTS Voice System](docs/tts-voice-system.md) | Multi-engine voice output, streaming chunks, personality sliders |
+| [Command Shortcuts](docs/command-shortcuts.md) | One-word hook commands (ci, push, nuke, ship, board, etc.) |
+| [Multi-Instance System](docs/instance-system.md) | Run 2+ isolated clones with separate data, ports, credentials |
+| [Safety Hooks](docs/safety-hooks.md) | PreToolUse guards: block kill-by-name, destructive git, app launch |
+| [Frustration Detection](docs/frustration-detection.md) | Hook that catches frustration and forces root-cause analysis |
+| [Opinion Detection](docs/opinion-detection.md) | Hook that catches "what do you think" and triggers deep analysis |
+| [Session Guardian](docs/session-guardian.md) | External Python daemon for auto-relaunch, lock files, TG alerts |
 | [Tips & Lessons Learned](docs/tips-and-tricks.md) | Anti-patterns, rules of thumb, platform-specific gotchas |
 
 ### Real Examples
@@ -73,6 +81,14 @@ Want to skip the manual setup? **[Claudeborn](https://github.com/HAL-XP/Claudebo
 | Multiple agents editing same file | Worktree isolation per agent | [Worktrees](docs/worktrees.md) |
 | Want to send commands from phone | Telegram/Discord Channels | [Channels](docs/channels.md) |
 | Need recurring automated checks | /loop scheduled tasks | [Scheduled Tasks](docs/scheduled-tasks.md) |
+| Main session context fills up with code | Dispatcher model (never code inline) | [Dispatcher](docs/dispatcher-model.md) |
+| Typing the same commands 50x/day | One-word hook shortcuts | [Shortcuts](docs/command-shortcuts.md) |
+| Two instances fight over ports/data | Multi-instance isolation system | [Instances](docs/instance-system.md) |
+| Claude kills processes by name | PreToolUse safety hooks (hard block) | [Safety](docs/safety-hooks.md) |
+| Claude retries the same broken approach | Frustration detection forces root-cause | [Frustration](docs/frustration-detection.md) |
+| Claude implements before evaluating | Opinion detection forces analysis first | [Opinion](docs/opinion-detection.md) |
+| Session crashes, no one notices | External guardian daemon + TG alerts | [Guardian](docs/session-guardian.md) |
+| Claude responds with text walls on mobile | Multi-engine TTS voice output chain | [TTS](docs/tts-voice-system.md) |
 
 ## Architecture at a Glance
 

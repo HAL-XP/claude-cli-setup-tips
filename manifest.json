@@ -1,5 +1,5 @@
 {
-  "currentVersion": "0.1.0",
+  "currentVersion": "0.2.0",
   "minClaudeCodeVersion": "2.1.80",
   "releases": [
     {
@@ -236,6 +236,77 @@
           "targets": [],
           "doc": "docs/tips-and-tricks.md#1m-context",
           "minVersion": "2.1.75"
+        }
+      ]
+    },
+    {
+      "version": "0.2.0",
+      "date": "2026-03-29",
+      "description": "Advanced patterns — dispatcher model, command shortcuts, multi-instance, safety hooks, session guardian, TTS voice system",
+      "features": [
+        {
+          "id": "dispatcher-model",
+          "title": "Dispatcher model (pure routing, never code inline)",
+          "type": "new",
+          "mechanical": false,
+          "targets": ["CLAUDE.md"],
+          "doc": "docs/dispatcher-model.md"
+        },
+        {
+          "id": "command-shortcuts",
+          "title": "One-word hook commands (ci, push, nuke, ship, board, etc.)",
+          "type": "new",
+          "mechanical": true,
+          "targets": [".claude/settings.json"],
+          "doc": "docs/command-shortcuts.md"
+        },
+        {
+          "id": "instance-system",
+          "title": "Multi-instance system (isolated clones with separate data, ports, credentials)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["instance.json", "src/main/instance.ts"],
+          "doc": "docs/instance-system.md"
+        },
+        {
+          "id": "safety-hooks",
+          "title": "PreToolUse safety hooks (block kill-by-name, destructive git, app launch)",
+          "type": "new",
+          "mechanical": true,
+          "targets": [".claude/settings.json"],
+          "doc": "docs/safety-hooks.md"
+        },
+        {
+          "id": "frustration-detection",
+          "title": "Frustration detection hook (forces root-cause analysis on repeated failures)",
+          "type": "new",
+          "mechanical": true,
+          "targets": [".claude/settings.json"],
+          "doc": "docs/frustration-detection.md"
+        },
+        {
+          "id": "opinion-detection",
+          "title": "Opinion detection hook (forces deep analysis before implementation)",
+          "type": "new",
+          "mechanical": true,
+          "targets": [".claude/settings.json"],
+          "doc": "docs/opinion-detection.md"
+        },
+        {
+          "id": "session-guardian",
+          "title": "Session guardian (external Python daemon for auto-relaunch and monitoring)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["_scripts/session-guardian.py"],
+          "doc": "docs/session-guardian.md"
+        },
+        {
+          "id": "tts-voice-system",
+          "title": "Multi-engine TTS voice output (Chatterbox, Edge TTS, ElevenLabs fallback chain)",
+          "type": "new",
+          "mechanical": true,
+          "targets": ["scripts/tts.py", "CLAUDE.md"],
+          "doc": "docs/tts-voice-system.md"
         }
       ]
     }
